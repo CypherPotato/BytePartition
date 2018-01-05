@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using System.Security.Cryptography;
 namespace System
 {
     /// <summary>
@@ -104,7 +105,28 @@ namespace System
                 }
                 return n;
             } }
-        
+
+        #endregion
+
+        #region "Hashing"
+        /// <summary>
+        /// Get an partition hash code using an specific hash algorithm.
+        /// </summary>
+        /// <param name="position">The partition position.</param>
+        /// <param name="hashing">An <seealso cref="HashAlgorithm"/> implemented class to calculate the hash.</param>
+        /// <returns></returns>
+        public byte[] GetPartitionHash(int position, HashAlgorithm hashing) {
+            return hashing.ComputeHash(PartitionsDecoded[position]);
+        }
+        /// <summary>
+        /// Gets an partition hash code using SHA-256.
+        /// </summary>
+        /// <param name="position">The partition position.</param>
+        /// <returns></returns>
+        public byte[] GetPartitionHash(int position) {
+            // Use SHA-256 in default
+            return GetPartitionHash(position, new SHA256Managed());
+        }
         #endregion
 
         #region "Methods"
@@ -176,6 +198,14 @@ namespace System
             Array.Clear(PartitionsDecoded[partition], offset, length);
         }
 
+        /// <summary>
+        /// Erases and deletes an partition. All partitions positions is adjusted when removing an partition.
+        /// </summary>
+        /// <param name="partition">The partition position.</param>
+        public void RemovePartition(int partition) {
+            PartitionsDecoded.RemoveAt(partition);
+        }
+        
         /// <summary>
         /// Changes an partition's size.
         /// </summary>
