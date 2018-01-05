@@ -92,6 +92,7 @@ namespace System
         /// Returns the total of byte partitions in this instance.
         /// </summary>
         public int PartitionCount => PartitionsDecoded.Count;
+
         /// <summary>
         /// Gets the total size of all partitions.
         /// </summary>
@@ -135,6 +136,15 @@ namespace System
         /// <returns></returns>
         public byte[] GetPartitionBuffer(int partition) {
             return PartitionsDecoded[partition];
+        }
+
+        /// <summary>
+        /// Gets an partition allocated size.
+        /// </summary>
+        /// <param name="partition">The partition position.</param>
+        /// <returns></returns>
+        public long GetPartitionSize(int partition) {
+            return PartitionsDecoded[partition].LongLength;
         }
 
         /// <summary>
