@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Text;
+using System.Linq;
 namespace Tester
 {
     class Program
@@ -8,6 +9,23 @@ namespace Tester
         static byte[] strEV;
         static void Main(string[] args)
         {
+            {
+                // testar a array temp
+                LocalByteArray k = new LocalByteArray() { 12, 52, 73 };
+                k.Add(255);
+                k.Remove((byte)52);
+                k.Add(31);
+                foreach (byte n in k) {
+                    Console.Write(n + ", ");
+                }
+                Console.WriteLine();
+                Console.WriteLine(k.Contains(12)); // true
+                Console.WriteLine(k.Contains(1)); // false
+                Console.WriteLine(k.Count); // 4
+                Console.WriteLine(string.Join(", ", k.ToArray()));
+                Console.ReadLine();
+                Console.Clear();
+            }
             // textos padrões
             string str1 = "Olá, mundo!";
             string str2 = "Eu sou outra string nada a ver com a outra";
@@ -28,9 +46,11 @@ namespace Tester
             part.CreatePartition(str2b);
 
             // manda tudo para os encoders em Async
-            Thread Method = new Thread(() => part.EncodePartition(out strEV));
-            Method.IsBackground = true;
-            Method.Start();
+            //                                       //Thread Method = new Thread(() => part.EncodePartition(out strEV));
+            // O programa termina antes do thread ~> //Method.IsBackground = true;
+            //                                       //Method.Start();
+
+            part.EncodePartition(out strEV);
 
             // vamos ver como ficou
             {
@@ -38,9 +58,10 @@ namespace Tester
                 Console.WriteLine("String 2 -> " + string.Join(" ", str2b));
                 Console.WriteLine("String T -> " + string.Join(" ", strEV));
             }
-
+            
             // agora vamos decodar em duas variáveis
             BytePartition part2 = new BytePartition(strEV);
+            
             str1o = part2.GetPartitionBuffer(0); // primeira string
             str2o = part2.GetPartitionBuffer(1); // segunda string
 

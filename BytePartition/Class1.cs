@@ -1,5 +1,12 @@
 ﻿
-//#define USE_OPTIMIZATIONS
+// Enabling this will clear memory in every big byte allocation
+// Performance can be decreased when enabling it
+#define USE_OPTIMIZATIONS
+
+// Enabling this will use Hard Disk instead of RAM memory for
+// allocating bytes for IO operations
+// Performance can be decreased when enabling it
+#define ENABLE_LOCAL_BYTE_IO_ACCESS
 
 using System;
 using System.Collections.Generic;
@@ -16,22 +23,31 @@ namespace System
     {
         #region "Encoders"
         internal void DecodePartition(byte[] buffer) {
+#if ENABLE_LOCAL_BYTE_IO_ACCESS
+            List<LocalByteArray> partitions = new List<LocalByteArray>();
+            LocalByteArray tmp_Crt = new LocalByteArray();
+#else
             List<byte[]> partitions = new List<byte[]>();
             List<byte> tmp_Crt = new List<byte>();
-            for(int pos = 0; pos < buffer.Length; pos++) {
+#endif
+            for (int pos = 0; pos < buffer.Length; pos++) {
                 byte by = buffer[pos];
                 
                 // end of stream
                 if(pos == buffer.Length - 1) {
                     partitions.Add(tmp_Crt.ToArray());
-                    Console.WriteLine("Closing...");
                     break;
                 }
 
                 if(by == 255) { // partition divisor
                     partitions.Add(tmp_Crt.ToArray());
+#if ENABLE_LOCAL_BYTE_IO_ACCESS
+                    tmp_Crt.Dispose();
+                    tmp_Crt = new LocalByteArray();
+#else
                     tmp_Crt.Clear();
                     tmp_Crt = new List<byte>();
+#endif
 #if USE_OPTIMIZATIONS
                     GC.Collect();
                     GC.WaitForPendingFinalizers(); // wait for memory clear
@@ -45,12 +61,24 @@ namespace System
 
                 }
             }
-            Console.WriteLine(partitions.Count);
+#if ENABLE_LOCAL_BYTE_IO_ACCESS
+            foreach(byte[] tmp in partitions) {
+                this.PartitionsDecoded.Add(tmp);
+            }
+#else
             this.PartitionsDecoded.AddRange(partitions);
+#endif
+#if ENABLE_LOCAL_BYTE_IO_ACCESS
+            foreach (LocalByteArray n in partitions) n.Dispose();
+            partitions.Clear();
+            tmp_Crt.Dispose();
+#else
             partitions.Clear();
             partitions = null;
             tmp_Crt.Clear();
             tmp_Crt = null;
+#endif
+            
             GC.Collect();
         }
         /// <summary>
@@ -66,7 +94,11 @@ namespace System
                 alloc++;
             }
 
+#if ENABLE_LOCAL_BYTE_IO_ACCESS
+            LocalByteArray output = new LocalByteArray();
+#else
             byte[] output = new byte[alloc];
+#endif
 
             int pos = -1;
             foreach (byte[] P in PartitionsDecoded) {
@@ -77,10 +109,13 @@ namespace System
                 pos++;
                 output[pos] = 255;
             }
-
+            Console.WriteLine(string.Join(" ", output));
             buffer = output;
+#if ENABLE_LOCAL_BYTE_IO_ACCESS
+            output.Dispose();
+#endif
         }
-        #endregion
+#endregion
         /// <summary>
         /// Creates an new <seealso cref="BytePartition"/> class instance decoding an existing BytePartition encoded array.
         /// </summary>
@@ -92,11 +127,15 @@ namespace System
         /// Creates a new <seealso cref="BytePartition"/> class instance without decoding an existing array.
         /// </summary>
         public BytePartition() { }
-        
+
+#if ENABLE_LOCAL_BYTE_IO_ACCESS
+        internal List<LocalByteArray> PartitionsDecoded = new List<LocalByteArray>();
+#else
         internal List<byte[]> PartitionsDecoded = new List<byte[]>();
+#endif
 
         #region "Functions"
-        
+
         /// <summary>
         /// Returns the total of byte partitions in this instance.
         /// </summary>
@@ -114,9 +153,9 @@ namespace System
                 return n;
             } }
 
-        #endregion
+#endregion
 
-        #region "Hashing"
+#region "Hashing"
         /// <summary>
         /// Get an partition hash code using an specific hash algorithm.
         /// </summary>
@@ -135,9 +174,9 @@ namespace System
             // Use SHA-256 in default
             return GetPartitionHash(position, new SHA256Managed());
         }
-        #endregion
+#endregion
 
-        #region "Methods"
+#region "Methods"
 
         /// <summary>
         /// Creates an partition with an specified size.
@@ -173,8 +212,8 @@ namespace System
         /// </summary>
         /// <param name="partition">The partition position.</param>
         /// <returns></returns>
-        public long GetPartitionSize(int partition) {
-            return PartitionsDecoded[partition].LongLength;
+        public int GetPartitionSize(int partition) {
+            return PartitionsDecoded[partition].Length;
         }
 
         /// <summary>
@@ -225,9 +264,9 @@ namespace System
             Array.Resize(ref n, newSize);
             PartitionsDecoded[partition] = n;
         }
-        #endregion
+#endregion
 
-        #region "Formatters"
+#region "Formatters"
         int clearBit(int value, int bit) => value & ~(1 << (bit - 1));
         int setBit(int value, int bit) => value | (1 << (bit - 1));
 
@@ -241,6 +280,7 @@ namespace System
             } else {
                 k = (byte)setBit(k, 1);
             }
+
             return k;
         }
 
@@ -256,6 +296,6 @@ namespace System
             }
             return k;
         }
-        #endregion
+#endregion
     }
 }
