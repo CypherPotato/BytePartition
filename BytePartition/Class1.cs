@@ -1,8 +1,12 @@
-﻿using System;
+﻿
+//#define USE_OPTIMIZATIONS
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.Security.Cryptography;
+
 namespace System
 {
     /// <summary>
@@ -28,6 +32,10 @@ namespace System
                     partitions.Add(tmp_Crt.ToArray());
                     tmp_Crt.Clear();
                     tmp_Crt = new List<byte>();
+#if USE_OPTIMIZATIONS
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers(); // wait for memory clear
+#endif
                     continue;
 
                 } else {
