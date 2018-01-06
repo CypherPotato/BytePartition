@@ -1,12 +1,13 @@
-﻿using System;
+using System;
+using System.Threading;
 using System.Text;
-
 namespace Tester
 {
     class Program
     {
-        static void Main(string[] args) {
-
+        static byte[] strEV;
+        static void Main(string[] args)
+        {
             // textos padrões
             string str1 = "Olá, mundo!";
             string str2 = "Eu sou outra string nada a ver com a outra";
@@ -19,7 +20,6 @@ namespace Tester
             byte[] str2o;
 
             // bytes que serão encodados
-            byte[] strEV;
 
             // cria o gerenciador
             BytePartition part = new BytePartition();
@@ -27,8 +27,10 @@ namespace Tester
             part.CreatePartition(str1b);
             part.CreatePartition(str2b);
 
-            // manda tudo para os encoders
-            part.EncodePartition(out strEV);
+            // manda tudo para os encoders em Async
+            Thread Method = new Thread(() => part.EncodePartition(out strEV));
+            Method.IsBackground = true;
+            Method.Start();
 
             // vamos ver como ficou
             {
