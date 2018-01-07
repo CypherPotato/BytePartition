@@ -119,7 +119,6 @@ namespace System
                 pos++;
                 output[pos] = 255;
             }
-            Console.WriteLine(string.Join(" ", output));
             buffer = output;
 #if ENABLE_LOCAL_BYTE_IO_ACCESS
             output.Dispose();
